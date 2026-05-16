@@ -20,6 +20,8 @@ Most 3DGS assets are trained in Gamma space, following the official implementati
 
 - Supports reading & rendering PLY files with SH degrees 0-3
 
+- Supports importing PlayCanvas/SuperSplat SOG files. WebP decoding support depends on Unity/platform support or a custom decoder hook; see [SOG WebP Integration](./Documentation~/SOG%20WebP%20Integration.md).
+
 - Supports orthographic projection
 
 - Compatible with MSAA
@@ -59,7 +61,7 @@ The next steps depend on the Render Pipeline you are using:
 
 ### Import Assets
 
-Copy or drag & drop the PLY file anywhere into your project's `Assets` folder. The package will then automatically read the file and import it as a derived class of `Gsplat Asset`. The package supports two compression modes for the asset: `Uncompressed` and `Spark` (packed). The default mode is `Spark`, which is inspired by [spark.js](https://github.com/sparkjsdev/spark). You can change the compression mode in the inspector of the imported `Gsplat Asset`.
+Copy or drag & drop the PLY or SOG file anywhere into your project's `Assets` folder. The package will then automatically read the file and import it as a derived class of `Gsplat Asset`. The package supports two compression modes for the asset: `Uncompressed` and `Spark` (packed). The default mode is `Spark`, which is inspired by [spark.js](https://github.com/sparkjsdev/spark). You can change the compression mode in the inspector of the imported `Gsplat Asset`.
 
 ### Add Gsplat Renderer
 

@@ -9,7 +9,7 @@ using UnityEngine;
 
 namespace Gsplat.Editor
 {
-    [ScriptedImporter(1, "ply")]
+    [ScriptedImporter(1, new[] {"ply", "sog"})]
     public class GsplatImporter : ScriptedImporter
     {
         public CompressionMode Compression = CompressionMode.Spark;
@@ -25,8 +25,13 @@ namespace Gsplat.Editor
 
             try
             {
-                gsplatAsset.LoadFromPly(ctx.assetPath, (info, progress) => EditorUtility.DisplayProgressBar(
-                    "Importing Gsplat Asset", info, progress));
+                var extension = System.IO.Path.GetExtension(ctx.assetPath);
+                if (extension.Equals(".sog", StringComparison.OrdinalIgnoreCase))
+                    gsplatAsset.LoadFromSog(ctx.assetPath, (info, progress) => EditorUtility.DisplayProgressBar(
+                        "Importing Gsplat Asset", info, progress));
+                else
+                    gsplatAsset.LoadFromPly(ctx.assetPath, (info, progress) => EditorUtility.DisplayProgressBar(
+                        "Importing Gsplat Asset", info, progress));
             }
             catch (Exception e)
             {
@@ -46,10 +51,12 @@ namespace Gsplat.Editor
         static void OnPostprocessAllAssets(string[] importedAssets, string[] deletedAssets, string[] movedAssets,
             string[] movedFromAssetPaths)
         {
-            var plyReimported = importedAssets.Any(path => path.EndsWith(".ply", StringComparison.OrdinalIgnoreCase));
-            if (!plyReimported) return;
+            var gsplatReimported = importedAssets.Any(path =>
+                path.EndsWith(".ply", StringComparison.OrdinalIgnoreCase) ||
+                path.EndsWith(".sog", StringComparison.OrdinalIgnoreCase));
+            if (!gsplatReimported) return;
 
-            var renderers = UnityEngine.Object.FindObjectsByType<GsplatRenderer>(FindObjectsSortMode.None);
+            var renderers = UnityEngine.Object.FindObjectsOfType<GsplatRenderer>();
             foreach (var renderer in renderers)
             {
                 if (renderer.GsplatAsset || string.IsNullOrEmpty(renderer.AssetGuid)) continue;

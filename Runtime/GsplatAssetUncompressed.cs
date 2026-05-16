@@ -181,5 +181,18 @@ namespace Gsplat
                 progressCallback?.Invoke("Reading vertices", i / (float)plyInfo.VertexCount);
             }
         }
+
+        public override void LoadFromSog(string sogPath, ProgressCallback progressCallback = null)
+        {
+            var data = SogDecoder.Load(sogPath, progressCallback);
+            SplatCount = data.SplatCount;
+            SHBands = data.SHBands;
+            Bounds = data.Bounds;
+            Positions = data.Positions;
+            Colors = data.Colors;
+            SHs = data.SHs;
+            Scales = data.Scales;
+            Rotations = data.Rotations;
+        }
     }
 }

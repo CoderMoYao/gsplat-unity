@@ -230,6 +230,66 @@ namespace Gsplat
             }
         }
 
+        public override void LoadFromSog(string sogPath, ProgressCallback progressCallback = null)
+        {
+            var data = SogDecoder.Load(sogPath, progressCallback);
+            SplatCount = data.SplatCount;
+            SHBands = data.SHBands;
+            Bounds = data.Bounds;
+            Allocate();
+
+            var coefficientCount = GsplatUtils.SHBandsToCoefficientCount(SHBands);
+            var splatCount = (int)SplatCount;
+            for (var i = 0; i < splatCount; i++)
+            {
+                if (SHBands > 0)
+                {
+                    for (int band = 1, shReadOffset = 0; band <= SHBands; band++)
+                    {
+                        var bandSize = band * 2 + 1;
+                        var shBandData = new float[bandSize * 3];
+                        for (var k = 0; k < bandSize; k++)
+                        {
+                            var sh = data.SHs[i * coefficientCount + shReadOffset + k];
+                            shBandData[k * 3] = sh.x;
+                            shBandData[k * 3 + 1] = sh.y;
+                            shBandData[k * 3 + 2] = sh.z;
+                        }
+
+                        if (band == 1)
+                            Array.Copy(PackSH1(shBandData), 0, PackedSH1, i * 2, 2);
+                        if (band == 2)
+                            Array.Copy(PackSH2(shBandData), 0, PackedSH2, i * 4, 4);
+                        if (band == 3)
+                            Array.Copy(PackSH3(shBandData), 0, PackedSH3, i * 4, 4);
+
+                        shReadOffset += bandSize;
+                    }
+                }
+
+                var color = new Vector4(
+                    data.Colors[i].x,
+                    data.Colors[i].y,
+                    data.Colors[i].z,
+                    SogDecoder.AlphaToOpacityLogit(data.Colors[i].w));
+                var scale = new Vector3(
+                    Mathf.Log(Mathf.Max(data.Scales[i].x, 1e-30f)),
+                    Mathf.Log(Mathf.Max(data.Scales[i].y, 1e-30f)),
+                    Mathf.Log(Mathf.Max(data.Scales[i].z, 1e-30f)));
+                var rotation = new Quaternion(
+                    data.Rotations[i].x,
+                    data.Rotations[i].y,
+                    data.Rotations[i].z,
+                    data.Rotations[i].w);
+
+                PackedSplats[i] = PackSplat(color, data.Positions[i], scale, rotation);
+                if ((i & 4095) == 0)
+                    progressCallback?.Invoke("Packing SOG splats", i / (float)splatCount);
+            }
+
+            progressCallback?.Invoke("Packing SOG splats", 1.0f);
+        }
+
         /// <summary>
         /// Copied from SparkJS encodeQuatXyz888 implementation
         /// Encode a Quaternion into 3 8-bit integer, converting the xyz coordinates
@@ -370,7 +430,7 @@ namespace Gsplat
         /// Encode an array of 9 signed RGB SH1 coefficients (clamped to [-1,1]) into
         /// a pair of uint32 values, where each coefficient is stored as a sint7
         /// </summary>
-        static uint[] PackSH1(float[] sh)
+        internal static uint[] PackSH1(float[] sh)
         {
             uint[] packedSH = new uint[2];
 
@@ -417,7 +477,7 @@ namespace Gsplat
         /// Encode an array of 15 signed RGB SH2 coefficients (clamped to [-1,1]) into
         /// an array of 4 uint32 values, where each coefficient is stored as a sint8.
         /// </summary>
-        static uint[] PackSH2(float[] sh)
+        internal static uint[] PackSH2(float[] sh)
         {
             uint[] packedSH = new uint[4];
             packedSH[0] = PackSint8Bytes(sh[0], sh[1], sh[2], sh[3]);
@@ -433,7 +493,7 @@ namespace Gsplat
         /// Encode an array of 21 signed RGB SH3 coefficients (clamped to [-1,1]) into
         /// an array of 4 uint32 values, where each coefficient is stored as a sint6.
         /// </summary>
-        static uint[] PackSH3(float[] sh)
+        internal static uint[] PackSH3(float[] sh)
         {
             uint[] packedSH = new uint[4];
 

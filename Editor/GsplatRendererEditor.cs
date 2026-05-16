@@ -61,13 +61,18 @@ namespace Gsplat.Editor
                 }
             }
             
-            var renderOrderProp = serializedObject.FindProperty(nameof(GsplatRenderer.RenderOrder));
-            uint renderOrder = renderOrderProp.uintValue;
-
             // RenderOrder slider depend on the MaxRenderOrder setting
             if (GsplatSettings.Instance.MaxRenderOrder > 1)
-                renderOrderProp.uintValue = (uint)EditorGUILayout.IntSlider(new GUIContent("Render Order"),
-                    (int)renderOrder, 0, (int)GsplatSettings.Instance.MaxRenderOrder - 1);
+            {
+                var newRenderOrder = (uint)EditorGUILayout.IntSlider(new GUIContent("Render Order"),
+                    (int)renderer.RenderOrder, 0, (int)GsplatSettings.Instance.MaxRenderOrder - 1);
+                if (newRenderOrder != renderer.RenderOrder)
+                {
+                    renderer.RenderOrder = newRenderOrder;
+                    renderer.ForceRefresh();
+                    EditorUtility.SetDirty(renderer);
+                }
+            }
 
             EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(GsplatRenderer.AsyncUpload)));
             if (serializedObject.FindProperty(nameof(GsplatRenderer.AsyncUpload)).boolValue)

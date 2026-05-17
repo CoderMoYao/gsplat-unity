@@ -233,6 +233,17 @@ namespace Gsplat
         public override void LoadFromSog(string sogPath, ProgressCallback progressCallback = null)
         {
             var data = SogDecoder.Load(sogPath, progressCallback);
+            LoadFromSogData(data, progressCallback);
+        }
+
+        public override void LoadFromSogBytes(byte[] sogArchiveBytes, ProgressCallback progressCallback = null)
+        {
+            var data = SogDecoder.Load(sogArchiveBytes, progressCallback);
+            LoadFromSogData(data, progressCallback);
+        }
+
+        void LoadFromSogData(SogData data, ProgressCallback progressCallback = null)
+        {
             SplatCount = data.SplatCount;
             SHBands = data.SHBands;
             Bounds = data.Bounds;

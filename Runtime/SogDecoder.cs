@@ -177,6 +177,26 @@ namespace Gsplat
         public static SogData Load(string sogPath, ProgressCallback progressCallback = null)
         {
             var files = ReadFiles(sogPath);
+            return Load(files, progressCallback);
+        }
+
+        public static SogData Load(byte[] sogArchiveBytes, ProgressCallback progressCallback = null)
+        {
+            if (sogArchiveBytes == null || sogArchiveBytes.Length == 0)
+                throw new ArgumentException("SOG archive bytes are empty", nameof(sogArchiveBytes));
+
+            var files = ReadArchive(sogArchiveBytes);
+            return Load(files, progressCallback);
+        }
+
+        public static SogData Load(IReadOnlyDictionary<string, byte[]> sogFiles,
+            ProgressCallback progressCallback = null)
+        {
+            if (sogFiles == null)
+                throw new ArgumentNullException(nameof(sogFiles));
+
+            var files = sogFiles.ToDictionary(pair => NormalizePath(pair.Key), pair => pair.Value,
+                StringComparer.OrdinalIgnoreCase);
             var metaText = ReadText(files, "meta.json");
             var meta = JsonUtility.FromJson<Meta>(metaText);
             ValidateMeta(meta);
@@ -253,8 +273,19 @@ namespace Gsplat
             if (!File.Exists(sogPath))
                 throw new FileNotFoundException("SOG file does not exist", sogPath);
 
-            var files = new Dictionary<string, byte[]>(StringComparer.OrdinalIgnoreCase);
             using var stream = File.OpenRead(sogPath);
+            return ReadArchive(stream);
+        }
+
+        static Dictionary<string, byte[]> ReadArchive(byte[] archiveBytes)
+        {
+            using var stream = new MemoryStream(archiveBytes, false);
+            return ReadArchive(stream);
+        }
+
+        static Dictionary<string, byte[]> ReadArchive(Stream stream)
+        {
+            var files = new Dictionary<string, byte[]>(StringComparer.OrdinalIgnoreCase);
             using var archive = new ZipArchive(stream, ZipArchiveMode.Read);
             foreach (var entry in archive.Entries)
             {
